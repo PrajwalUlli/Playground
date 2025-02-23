@@ -1,3 +1,5 @@
+//SO: https://igupta.in/blog/writing-a-unix-shell-part-2/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
