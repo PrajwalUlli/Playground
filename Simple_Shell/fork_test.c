@@ -25,4 +25,5 @@ int main(void)
 		wait_result = waitpid(child_pid, &status, WUNTRACED); // dont know what UNTRACED does
 		printf("\ncommand: exit_status (%d), result (%d)\n", status, wait_result);
 	}
+	return 0;
 }
