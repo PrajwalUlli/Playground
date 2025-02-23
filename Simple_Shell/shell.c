@@ -4,9 +4,6 @@
 #include <string.h>
 #include <ncurses.h>
 
-// #define BACKSPACE 127
-// #define DOWN 258
-// #define UP 259
 #define ENTER 10
 #define ESCAPE 27
 #define CTRL_C 3
@@ -18,38 +15,45 @@ typedef struct
   char *data;
   size_t count;    // current index
   size_t capacity; // string cap
-} DynamicArray;
-
-/* Validate new capacity for DA_Append */
-void DA_Space_Check(void *cond)
+} String;
+typedef struct
 {
-  if (!(cond)) // if passed cond is NULL then this runs
-  {
-    endwin();
-    fprintf(stderr, "Out Of RAM!\n");
-    exit(1);
-  }
-}
+  String *data;
+  size_t count;    // current index tracker
+  size_t capacity; // array cap
+} String_Array;
 
-/* Dynamic String Array Resizing */
-// as the user types the string is built with those chars using this func
-void DA_Append(DynamicArray *DA, char item)
-{
-  if (DA->count >= DA->capacity)
-  {
-    DA->capacity = (DA->capacity == 0) ? DATA_CAP : DA->capacity * 2;
-    void *new_space = calloc((DA->capacity) + 1, sizeof(char));
-    DA_Space_Check(new_space);
-    if (DA->data != NULL)
-    {
-      memcpy(new_space, DA->data, DA->count);
-    }
-    free(DA->data);
-    DA->data = new_space;
-  }
-  DA->data[DA->count++] = item;
-  DA->data[DA->count] = '\0';
-}
+#define DA_SPACE_CHECK(cond)            \
+  do                                    \
+  {                                     \
+    if (!(cond))                        \
+    {                                   \
+      endwin();                         \
+      fprintf(stderr, "Out Of RAM!\n"); \
+      exit(EXIT_FAILURE);               \
+    }                                   \
+  } while (0)
+
+// Macro to append a character to the DynamicArray.
+// Also wrapped in do/while(0) to treat as a single block.
+#define DA_APPEND(DA, item)                                          \
+  do                                                                 \
+  {                                                                  \
+    if ((DA)->count >= (DA)->capacity)                               \
+    {                                                                \
+      (DA)->capacity = ((DA)->capacity == 0) ? DATA_CAP              \
+                                             : (DA)->capacity * 2;   \
+      void *_new_space = calloc(((DA)->capacity + 1), sizeof(char)); \
+      DA_SPACE_CHECK(_new_space);                                    \
+      if ((DA)->data != NULL)                                        \
+      {                                                              \
+        memcpy(_new_space, (DA)->data, (DA)->count);                 \
+      }                                                              \
+      free((DA)->data);                                              \
+      (DA)->data = _new_space;                                       \
+    }                                                                \
+    (DA)->data[(DA)->count++] = (item);                              \
+  } while (0)
 
 int main(void)
 {
@@ -61,17 +65,14 @@ int main(void)
 
   int ch; // could also be 'char ch', works this way for handling hardcoded special key values
   int cur_y, cur_x;
+  size_t cursorLine = 0; // size_t = unsigned int
+  size_t max_hist_count = 0;
+
+  // {0} valid only where you’re declaring a variable for the very first time
+  String command = {0};
+  String_Array command_history = {0};
 
   bool QUIT = false;
-
-  DynamicArray command = {0};
-
-  DynamicArray command_history[32] = {0};
-  size_t command_his_count = 0;
-  // size_t cmdLen = 0;
-  size_t cursorLine = 0;
-  size_t upCount = 1;
-
   while (!QUIT)
   {
     // Helps with the backspace
@@ -80,6 +81,7 @@ int main(void)
 
     // mvprintw(y, x, string)
     mvprintw(cursorLine, 0, "%s", PROMPT);
+
     // get cursor position after printing prompt
     getyx(stdscr, cur_y, cur_x);
     // as at start the data is NULL, and the prompt will show (null)
@@ -98,11 +100,13 @@ int main(void)
       cursorLine++;
       mvprintw(cursorLine, 0, "%s is not recognized as an internal or external command", command.data);
       cursorLine++;
-      command_history[command_his_count++] = command;
-      command.data = NULL;
-      command.count = 0;
-      command.capacity = 0;
-      // free(command.data);
+      DA_APPEND(&command_history, command);
+      if (command_history.count > max_hist_count)
+      {
+        max_hist_count = command_history.count;
+      }
+      // create an anonymous “String” object (with all fields zero) and then assign it to “command.” Think of “(String){0}” as a temporary struct whose fields are all zeroed, which is then copied into “command”
+      command = (String){0};
       break;
     case KEY_BACKSPACE:
       if (command.count > 0)
@@ -110,30 +114,20 @@ int main(void)
         command.data[--command.count] = '\0';
       }
       break;
-    case KEY_UP: 
-      if (command_his_count > 0 && upCount <= command_his_count)
-      { 
-        if (command.data == NULL)
-          {
-            command.data = calloc((strlen(command_history[command_his_count - upCount].data)+1), sizeof(char));
-          }
-        strcpy(command.data, command_history[command_his_count - upCount].data);
-        upCount++;
+    case KEY_UP:
+      if (command_history.count > 0)
+      {
+        command = (command_history.data)[--command_history.count];
       }
       break;
     case KEY_DOWN:
-      if (command_his_count > 0 && upCount > 1)
-      { 
-        upCount--;
-        if (command.data == NULL)
-          {
-            command.data = calloc((strlen(command_history[command_his_count - upCount].data)+1), sizeof(char));
-          }
-        strcpy(command.data, command_history[command_his_count - upCount].data);
+      if (command_history.count < max_hist_count)
+      {
+        command = (command_history.data)[++command_history.count];
       }
       break;
     default:
-      DA_Append(&command, (char)ch);
+      DA_APPEND(&command, (char)ch);
       break;
     }
   }
@@ -142,9 +136,12 @@ int main(void)
   endwin();
 
   /* Free the calloc created space for the data block */
-  for (int i = 0; i < (sizeof(command_history)/sizeof(command)); i++) {
-    free(command_history[i].data);
+  for (int i = 0; i < max_hist_count; i++)
+  {
+    // printf("%s\n", (command_history.data)[i].data);
+    free((command_history.data)[i].data);
   }
   free(command.data);
+
   return 0;
 }
