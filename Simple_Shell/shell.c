@@ -15,13 +15,13 @@ typedef struct
   char *data;
   size_t count;    // current index
   size_t capacity; // string cap
-} String;
+} String_t;
 typedef struct
 {
   String *data;
   size_t count;    // current index tracker
   size_t capacity; // array cap
-} String_Array;
+} String_Array_t;
 
 #define DA_SPACE_CHECK(cond)            \
   do                                    \
@@ -59,9 +59,9 @@ int main(void)
 {
 
   initscr();
-  raw();    // i think it means dont handle any key presses
-  noecho(); // dont echo pressed keys
-  keypad(stdscr, TRUE);
+  raw();                // i think it means dont handle any key presses
+  noecho();             // dont echo pressed keys
+  keypad(stdscr, TRUE); // enable arrow keys, function keys, etc
 
   int ch; // could also be 'char ch', works this way for handling hardcoded special key values
   int cur_y, cur_x;
@@ -69,8 +69,8 @@ int main(void)
   size_t max_hist_count = 0;
 
   // {0} valid only where you’re declaring a variable for the very first time
-  String command = {0};
-  String_Array command_history = {0};
+  String_t command = {0};
+  String_Array_t command_history = {0};
 
   bool QUIT = false;
   while (!QUIT)
@@ -105,8 +105,7 @@ int main(void)
       {
         max_hist_count = command_history.count;
       }
-      // create an anonymous “String” object (with all fields zero) and then assign it to “command.” Think of “(String){0}” as a temporary struct whose fields are all zeroed, which is then copied into “command”
-      command = (String){0};
+      command = (String_t){0}; // create an anonymous “String” object (with all fields zero) and then assign it to “command.”
       break;
     case KEY_BACKSPACE:
       if (command.count > 0)
@@ -136,11 +135,12 @@ int main(void)
   endwin();
 
   /* Free the calloc created space for the data block */
-  for (int i = 0; i < max_hist_count; i++)
+  for (int i = 0; i < command_history.count; i++)
   {
     // printf("%s\n", (command_history.data)[i].data);
     free((command_history.data)[i].data);
   }
+  free(command_history.data);
   free(command.data);
 
   return 0;
