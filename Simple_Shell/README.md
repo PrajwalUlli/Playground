@@ -1,15 +1,16 @@
 # Shell Functions
 
 ### FORK()
-see forks using cmd: `ps -f`
-force kill using cmdz: `kill -9 <pid>`
+see forks using cmd: ```ps -f```
+force kill using cmd: ```kill -9 <pid>```
+
 ![fork flow diagram](https://github.com/PrajwalUlli/Playground/blob/main/Simple_Shell/images/Fork.png)
 
 ### EXECVP()
 ![execvp flow diagram](https://github.com/PrajwalUlli/Playground/blob/main/Simple_Shell/images/Execvp.png)
 
 ### WAITPID()
-basic syntax: `waitpid(child_pid, status, 0)`
+basic syntax: ```waitpid(child_pid, status, 0)```
 
 #### Common `W` Flags for `waitpid()`
 
