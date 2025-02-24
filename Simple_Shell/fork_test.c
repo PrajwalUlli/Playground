@@ -17,12 +17,17 @@ int main(void)
 		sleep(2);
 		printf("Parent_Proc: %d, Child_Proc: %d, Command_Proc: %d\n", getppid(), getpid(), child_pid);
 		sleep(2);
+		// good to include. ensures this block exits first, helps in cases where code structure is not properly defined and this block leaks into the parent block and starts exec-ing its code.
+		// It ensures uniformity when multiple exit points exist in a process.
+		exit(0);
 	}
 	else
 	{
 		printf("Parent: %d\n", getpid());
 		printf("Fork created: %d\n", child_pid);
-		wait_result = waitpid(child_pid, &status, WUNTRACED); // dont know what UNTRACED does
+		
+		wait_result = waitpid(child_pid, &status, 0);
+		
 		printf("\ncommand: exit_status (%d), result (%d)\n", status, wait_result);
 	}
 	return 0;
