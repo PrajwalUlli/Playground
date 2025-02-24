@@ -24,3 +24,11 @@ int main(void)
 // execvp replaces the entire current process with the new program - it's not like a normal function call that returns control
 // once execvp("ls", argv) is called, entire program's memory, code, and data are replaced by the 'ls' program
 // this can be solved using fork()
+
+/*
+execvp immediately attempts to load the new executable into the calling process’s memory and replace its image completely. 
+If the call succeeds, the original program is entirely replaced—the operating system does not keep a copy of what was there before. 
+If the call fails, execvp returns -1 and sets errno, and the calling process continues running its original code from just after the execvp call. 
+In that failure case, no new process image was installed and nothing was overwritten, so there's no need for the system to "revert" 
+because the old process image is still intact.
+*/
