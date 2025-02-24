@@ -2,6 +2,7 @@
 
 ### FORK()
 see forks using cmd: `ps -f`
+force kill using cmdz: `kill -9 <pid>`
 ![fork flow diagram](https://github.com/PrajwalUlli/Playground/blob/main/Simple_Shell/images/Fork.png)
 
 ### EXECVP()
