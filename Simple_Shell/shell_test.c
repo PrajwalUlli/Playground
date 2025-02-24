@@ -44,6 +44,22 @@ int main(void)
 		input = readline("sh$ "); // parent process
 		output = tokenize(input);
 
+		if (strcmp(output[0], "exit") == 0)
+		{
+			exit(0);
+		}
+		if (strcmp(output[0], "cd") == 0)
+		{
+			// chdir not only returns the status but also sets errno, so either can be used
+			chdir(output[1]);
+			if (errno < 0)
+			{
+				perror(output[1]);
+				exit(1);
+			}
+			// no exit(0); here as it will exit the main program, as we are not creating a fork() here
+			continue;
+		}
 		child_pid = fork();
 		if (child_pid < 0)
 		{
@@ -61,7 +77,11 @@ int main(void)
 			wait_result = waitpid(child_pid, &status, WUNTRACED); // parent process wait
 		}
 		free(input);
-		free(output); // readline allocates memory using malloc, hence to be freed
+		free(output); // readline allocates memory using malloc so its to be freed
 	}
 	return 0;
 }
+
+/* why some cmds run (like pwd, ls, ps, etc) and not others (like cd, ...) */
+// Commands like pwd, ls, and ps are external programs. When you type one of these, your shell forks a child process and then calls execvp, which replaces the child process with the external program. Since these programs are separate binaries (located in /bin, /usr/bin, etc.), they run without any special handling in your shell.
+// In contrast, cd is a shell built-in command. Changing directories must affect your shell process (the parent), not a child process. That's why you check for "cd" before forking and then call chdir() in the parent. If you were to run cd by forking and exec'ing an external command, the working directory change would happen only in the child; when it exits, your shell's working directory would stay the same.
