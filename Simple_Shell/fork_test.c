@@ -1,4 +1,4 @@
-// SO: https://igupta.in/blog/writing-a-unix-shell-part-1/
+//SO: https://igupta.in/blog/writing-a-unix-shell-part-1/
 
 #include <unistd.h>
 #include <stdlib.h>
