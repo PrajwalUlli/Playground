@@ -1,6 +1,7 @@
 # Shell Functions
 
 ### FORK()
+see forks using cmd: `ps -f`
 ![fork flow diagram](https://github.com/PrajwalUlli/Playground/blob/main/Simple_Shell/images/Fork.png)
 
 ### EXECVP()
