@@ -8,9 +8,12 @@
 #include <errno.h>
 #include <readline/readline.h>
 
+#define INITIAL_CAP 8
+
 char **tokenize(char *input)
 {
-	char **tokens = malloc(strlen(input) * sizeof(char *));
+	// 8*char* more memory efficient not over-allocating based and enough for typical commands but not wasteful
+	char **tokens = malloc(INITIAL_CAP * sizeof(char *));
 	if (tokens == NULL)
 	{
 		perror("Malloc Failed!");
@@ -20,7 +23,8 @@ char **tokenize(char *input)
 	char *parsed;
 	char *delim = " ";
 	int index = 0;
-	parsed = strtok(input, delim);
+	// returns a pointer to the token
+	parsed = strtok(input, delim); // replaces delims with a null char '\0'
 	while (parsed != NULL)
 	{
 		tokens[index] = parsed;
@@ -44,8 +48,17 @@ int main(void)
 		input = readline("sh$ "); // parent process
 		output = tokenize(input);
 
+		if (input == NULL || strlen(input) == 0 || output[0] == NULL)
+		{
+			free(input);
+			free(output);
+			continue;
+		}
+
 		if (strcmp(output[0], "exit") == 0)
 		{
+			free(input);
+			free(output);
 			exit(0);
 		}
 		if (strcmp(output[0], "cd") == 0)
@@ -57,6 +70,8 @@ int main(void)
 				perror(output[1]);
 				exit(1);
 			}
+			free(input);
+			free(output);
 			// no exit(0); here as it will exit the main program, as we are not creating a fork() here
 			continue;
 		}
@@ -74,6 +89,7 @@ int main(void)
 		}
 		else
 		{
+			// printf("Hi, parent here!\n");
 			wait_result = waitpid(child_pid, &status, WUNTRACED); // parent process wait
 		}
 		free(input);
