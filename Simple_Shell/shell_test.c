@@ -12,11 +12,26 @@
 
 char **tokenize(char *input)
 {
+	// If input is NULL, calling strlen on it will cause a segmentation fault, hence NULL check before len check
+	if (input == NULL || strlen(input) == 0)
+	{
+		// Allocate memory for one pointer (for the NULL terminator)
+		char **empty_tokens = malloc(sizeof(char *));
+		if (empty_tokens == NULL)
+		{
+			perror("Malloc failed for empty_tokens!");
+			exit(1);
+		}
+		empty_tokens[0] = NULL;
+		return empty_tokens;
+	}
+
 	// 8*char* more memory efficient not over-allocating based and enough for typical commands but not wasteful
 	char **tokens = malloc(INITIAL_CAP * sizeof(char *));
+
 	if (tokens == NULL)
 	{
-		perror("Malloc Failed!");
+		perror("Malloc failed for tokens!");
 		exit(1);
 	}
 
@@ -48,7 +63,7 @@ int main(void)
 		input = readline("sh$ "); // parent process
 		output = tokenize(input);
 
-		if (input == NULL || strlen(input) == 0 || output[0] == NULL)
+		if (input == NULL || strlen(input) == 0 || output == NULL)
 		{
 			free(input);
 			free(output);
@@ -63,12 +78,17 @@ int main(void)
 		}
 		if (strcmp(output[0], "cd") == 0)
 		{
-			// chdir not only returns the status but also sets errno, so either can be used
-			chdir(output[1]);
-			if (errno < 0)
+			if (output[1] == NULL)
+			{
+				printf("cd: No path specified\n");
+				continue;
+			}
+			// chdir not only returns the status but also sets errno to some +ve int to indicate the specific error.
+			int result = chdir(output[1]);
+			if (result < 0)
 			{
 				perror(output[1]);
-				exit(1);
+				continue;
 			}
 			free(input);
 			free(output);
