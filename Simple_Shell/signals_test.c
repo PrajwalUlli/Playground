@@ -5,12 +5,12 @@
 
 void SigCall(int num)
 {
-  printf("%d\n", num);
+  printf("Signal: %d\n", num);
 }
 
 int main(void)
 {
-  signal(SIGINT, SIG_DFL);
+  signal(SIGINT, SigCall);
   while (1);
 }
 
