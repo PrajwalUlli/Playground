@@ -1,14 +1,27 @@
 //SO: https://igupta.in/blog/writing-a-unix-shell-part-2/
+//SO: https://igupta.in/blog/writing-a-unix-shell-part-3/
 
+#include <nob.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
+#include <setjmp.h>
+#include <sys/wait.h>
 #include <readline/readline.h>
 
 #define INITIAL_CAP 8
+#define NOB_IMPLEMENTATION
+
+static sigjmp_buf env;
+static volatile sig_atomic_t jump_active = 0;
+
+void sigint_handler(int signo)
+{
+	siglongjmp(env, 42);
+}
 
 char **tokenize(char *input)
 {
@@ -56,11 +69,22 @@ int main(void)
 	char **output;
 
 	int status;
-	pid_t child_pid, wait_result;
+	pid_t child_pid;
 
 	while (1)
 	{
-		input = readline("sh$ "); // parent process
+		signal(SIGINT, sigint_handler);
+
+		// important to place it before the input/output identifiers
+		if (sigsetjmp(env, 1) == 42)
+		{
+			printf("\n");
+			continue;
+		}
+		jump_active = 1;
+
+		/* Parent Process */
+		input = readline("pcsh$ ");
 		output = tokenize(input);
 
 		if (input == NULL || strlen(input) == 0 || output == NULL)
@@ -76,6 +100,7 @@ int main(void)
 			free(output);
 			exit(0);
 		}
+
 		if (strcmp(output[0], "cd") == 0)
 		{
 			if (output[1] == NULL)
@@ -95,6 +120,7 @@ int main(void)
 			// no exit(0); here as it will exit the main program, as we are not creating a fork() here
 			continue;
 		}
+
 		child_pid = fork();
 		if (child_pid < 0)
 		{
@@ -103,6 +129,8 @@ int main(void)
 		}
 		else if (child_pid == 0)
 		{
+			/* Child Process */
+			signal(SIGINT, SIG_DFL); // call before execvp so that the signal configs inherited from the parent process is removed for this particular signal
 			execvp(output[0], output);
 			perror(output[0]);
 			exit(1); // only terminates child process
@@ -110,7 +138,7 @@ int main(void)
 		else
 		{
 			// printf("Hi, parent here!\n");
-			wait_result = waitpid(child_pid, &status, WUNTRACED); // parent process wait
+			waitpid(child_pid, &status, WUNTRACED); // parent process wait
 		}
 		free(input);
 		free(output); // readline allocates memory using malloc so its to be freed
