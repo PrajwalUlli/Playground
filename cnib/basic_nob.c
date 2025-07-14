@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	nob_cmd_append(&cmd, "-o");
 	nob_cmd_append(&cmd, "<output_path>");
 	nob_cmd_append(&cmd, "<file_path>");
-  nob_cmd_append(&cmd, "-l<library>");
+  	nob_cmd_append(&cmd, "-l<library>");
 
 	// Run compilation
 	if (!nob_cmd_run_sync(cmd))
