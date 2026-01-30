@@ -1,7 +1,7 @@
 # Shell Functions
 
 ### FORK()
-see forks using cmd: ```ps -f```
+see forks using cmd: ```ps --forest```
 force kill using cmd: ```kill -9 <pid>```
 
 ![fork flow diagram](https://github.com/PrajwalUlli/Playground/blob/main/Simple_Shell/images/Fork.png)
